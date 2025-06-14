@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>Mine command converter 完全版</title>
+<style>
+  body {
+    font-family: monospace;
+    background: #222;
+    color: #eee;
+    padding: 20px;
+  }
+  textarea, pre {
+    width: 100%;
+    box-sizing: border-box;
+    font-family: monospace;
+    font-size: 14px;
+    background: #333;
+    color: #eee;
+    border: 2px solid #555;
+    border-radius: 4px;
+    padding: 8px;
+  }
+  textarea {
+    height: 150px;
+  }
+  button {
+    margin-top: 10px;
+    padding: 10px 20px;
+    font-size: 14px;
+    background: #5555aa;
+    border: none;
+    color: white;
+    cursor: pointer;
+    border-radius: 5px;
+  }
+  button:hover {
+    background: #7777cc;
+  }
+  h1 {
+    margin-bottom: 10px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Mine command converter</h1>
+
+<label for="inputArea">コマンド入力：</label><br />
+<textarea id="inputArea" placeholder="/alert @w 'Hello World'"></textarea><br />
+<button id="convertBtn">変換</button>
+<h2>JavaScript 出力：</h2>
+<pre id="outputArea"></pre>
+<hr>
+
+<section>
+    <h2>基本構文</h2>
+    <p>コマンドの基本は以下の形式です：</p>
+    <pre><code>/メソッド @ターゲット 引数</code></pre>
+    <p><strong>例：</strong></p>
+    <pre><code>
+　/alert @w 'Hello World'
+  /log @c 'ログメッセージ'
+  /getElementById @d 'myId'
+    </code></pre>
+  </section>
+  
+  <section>
+    <h2>ターゲット一覧</h2>
+    <ul>
+      <li><code>@h</code> - <code>history</code>（ブラウザ履歴）</li><br>
+      <li><code>@c</code> - <code>console</code>（デベロッパーツールのコンソール）</li><br>
+      <li><code>@d</code> - <code>document</code>（HTMLドキュメント）</li><br>
+      <li><code>@w</code> - <code>window</code>（ブラウザのウィンドウ）</li><br>
+    </ul>
+  </section>
+  
+  <section>
+    <h2>使用例</h2>
+    <pre><code>
+  /alert @w 'Hello World'
+  ⇓
+  window.alert('Hello World');
+  
+  /log @c 'ログメッセージ'
+  ⇓
+  console.log('ログメッセージ');
+  
+  /getElementById @d 'myId'
+  ⇓
+  document.getElementById('myId');
+  </code></pre>
+  </section>
+  
+  <section>
+    <h2>注意事項</h2>
+    <ul>
+      <li>ターゲットは省略可能です。省略時はグローバル関数として扱います。</li><br>
+      <li>引数はそのままメソッドの引数としてJavaScriptに変換されます。</li><br>
+      <li>対応していないコマンドはコメントとして出力されます。</li><br>
+    </ul>
+  </section>
+
+<script>
+function convertMCtoJS(code) {
+  const lines = code.trim().split('\n');
+  let js = '';
+
+  const targetMap = {
+    h: 'history',
+    c: 'console',
+    d: 'document',
+    w: 'window',
+  };
+
+  for (let line of lines) {
+    line = line.trim();
+    if (!line) continue;
+
+    // /メソッド @ターゲット 引数 形式を解析
+    // @ターゲットは省略可
+    const regex = /^\/(\w+)(?:\s+@(\w))?\s*(.*)$/;
+    const match = line.match(regex);
+
+    if (!match) {
+      js += `// 未対応コマンド: ${line}\n`;
+      continue;
+    }
+
+    const [, method, targetCode, args] = match;
+
+    // 対象の名前取得（なければ空文字）
+    const target = targetCode ? (targetMap[targetCode] || '') : '';
+
+    // メソッド呼び出し文を組み立て
+    // 例: console.log('text');
+    // ただし、targetが空なら method(args);
+    // 引数が空の場合は空の括弧 () にする
+    const argText = args.trim() || '';
+
+    if (target) {
+      js += `${target}.${method}(${argText});\n`;
+    } else {
+      js += `${method}(${argText});\n`;
+    }
+  }
+
+  return js;
+}
+
+document.getElementById('convertBtn').onclick = () => {
+  const input = document.getElementById('inputArea').value;
+  const output = convertMCtoJS(input);
+  document.getElementById('outputArea').textContent = output;
+};
+</script>
+
+</body>
+</html>
